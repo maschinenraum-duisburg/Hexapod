@@ -9,6 +9,7 @@ const int IDLE_TIME_MS = 4000;         //Idletimer dauer
 
 int animParams[10];     //[anzahl parameter, animationsmodus, param 1, ... , param n]
 int animationStep = 0; // Aktueller Schritt der Animation
+int animationLastStep = 0; //letzter Schritt der Animation
 bool booted = false;
 
 unsigned long previousTime;               //timerVariable Loop
@@ -52,84 +53,6 @@ void setup() {
 //Color = LED-COLOR in RGB LEDS_LEG[n].Color(R, G, B)
 //LEDS_COUNT = 8; -> Max LEDS
 //MAX_LEGS = 6;
-
-uint32_t Wheel(byte WheelPos, int n) {
-  WheelPos = 255 - WheelPos;
-  if(WheelPos < 85) {
-    return LEDS_LEG[n].Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  }
-  if(WheelPos < 170) {
-    WheelPos -= 85;
-    return LEDS_LEG[n].Color(0, WheelPos * 3, 255 - WheelPos * 3);
-  }
-  WheelPos -= 170;
-  return LEDS_LEG[n].Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-}
-
-void animate(int params[]){
-
-  switch (params[0]){
-    case 0: //bootup Animation  [R,G,B,delay]
-      for (int i = 0; i < LEDS_COUNT; i++) {
-        for (int n = 0; n < MAX_LEGS; n++) {   
-          LEDS_LEG[n].setPixelColor(i, LEDS_LEG[n].Color(params[1], params[2], params[3]));
-          LEDS_LEG[n].show();
-        }
-        delay(params[4]);
-      }
-      for (int i = 0; i < LEDS_COUNT; i++) {
-        for (int n = 0; n < MAX_LEGS; n++) {   
-          LEDS_LEG[n].setPixelColor(i, LEDS_LEG[n].Color(0, 0, 0));
-          LEDS_LEG[n].show();
-        }
-        delay(params[4]);
-      }
-      lastAction = millis();
-      booted = true;
-    break;
-
-    case 1: //Carousel Animation  [R,G,B,delay]
-      for (int n = 0; n < MAX_LEGS; n++) {   
-        for (int i = 0; i < LEDS_COUNT; i++) {
-          LEDS_LEG[n].setPixelColor(i, LEDS_LEG[n].Color(params[1], params[2], params[3]));
-        }
-        LEDS_LEG[n].show();
-        delay(params[4]);
-      }
-      for (int n = 0; n < MAX_LEGS; n++) {   
-        for (int i = 0; i < LEDS_COUNT; i++) {
-          LEDS_LEG[n].setPixelColor(i, LEDS_LEG[n].Color(0, 0, 0));
-        }
-        LEDS_LEG[n].show();
-        delay(params[4]);
-      }
-    break;
-
-    case 98: //Idleanimation
-      while(button() != 1)
-      {
-        if(millis() - previousAnimTime > 5){
-          previousAnimTime = millis();
-          for (int n = 0; n < MAX_LEGS; n++) {   
-            for (int i = 0; i < LEDS_COUNT; i++) {
-              int colorIndex = ((LEDS_COUNT - 1 - i) * 256 / LEDS_COUNT + animationStep) & 255;
-              LEDS_LEG[n].setPixelColor(i, Wheel(colorIndex, n));
-            }
-            LEDS_LEG[n].show();
-          }
-          animationStep = (animationStep + 1) % 256; // Schritt für den Farbwechsel
-        }
-      }
-    break;
-
-    case 99: //Turn off all LEDS
-      for (int n = 0; n < MAX_LEGS; n++) {    
-          LEDS_LEG[n].clear();
-          LEDS_LEG[n].show();
-      }
-    break;
-  }
-}
 
 void setArray(int params[], int numArgs, ...) {
   va_list args;
@@ -179,6 +102,8 @@ void loop(){
     demo++;
     playdemo(demo); 
   } 
+
+
   if((millis() - previousTime) > FRAME_TIME_MS)
   {     
     previousTime = millis(); 
@@ -189,9 +114,9 @@ void loop(){
     if(demo >= 3){
       demo= 0;
     }  
-    if((millis() - lastAction) > IDLE_TIME_MS)
+    if((millis() - lastAction) > IDLE_TIME_MS)      //ideanimation
     {     
-      setArray(animParams,1,98); //ideanimation
+      setArray(animParams,1,98); 
       animate(animParams); 
     } 
   } 
